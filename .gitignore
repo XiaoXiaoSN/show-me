@@ -20,3 +20,5 @@ terraform/_modules/groups/
 lifecycle
 jenkins/_gen/
 *.pyc
+
+firebaseServiceAccount.json

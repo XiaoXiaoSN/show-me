@@ -1,3 +1,6 @@
+import os
+import json
+from firebase import Firebase
 from flask import Flask, request, abort
 
 from linebot import (
@@ -11,17 +14,19 @@ from linebot.models import (
 )
 
 app = Flask(__name__)
+firebase = Firebase()
 
-
-CHANNEL_ACCESS_TOKEN = '6ZMTfHC3qnr+VPbuosgAoN2yPS1Q5bcX7AaVT7Jc1nmVzhdsQ7ezNyLMttvBaWxEgH6FBmrq2GBO+IjjbITCSLwooLkfnWKVZwfKj87d1WVAfjq/eoVkL+mpoiWd/XwgxiS0wG0J4Aln36lnAv4ylwdB04t89/1O/w1cDnyilFU='
-CHANNEL_SECRET = 'bc285cd1a9bb77ae5c3b9a7fdadfb4bc'
+# export CHANNEL_ACCESS_TOKEN=6ZMTfHC3qnr+VPbuosgAoN2yPS1Q5bcX7AaVT7Jc1nmVzhdsQ7ezNyLMttvBaWxEgH6FBmrq2GBO+IjjbITCSLwooLkfnWKVZwfKj87d1WVAfjq/eoVkL+mpoiWd/XwgxiS0wG0J4Aln36lnAv4ylwdB04t89/1O/w1cDnyilFU=
+# export CHANNEL_SECRET=bc285cd1a9bb77ae5c3b9a7fdadfb4bc
+CHANNEL_ACCESS_TOKEN =  os.environ['CHANNEL_ACCESS_TOKEN']
+CHANNEL_SECRET = os.environ['CHANNEL_SECRET']
 
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
 @app.route("/", methods=['GET'])
-def hello():
-    return 'OK'
+def heath():
+    return "I'm fine thank you, and you?"
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -30,25 +35,32 @@ def callback():
 
     # get request body as text
     body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
-    # print("Request body: " + body)
 
-    # message_content = line_bot_api.get_message_content(body.events[0].message.id)
-    # with open(file_path, 'wb') as fd:
-    #     for chunk in message_content.iter_content():
-    #         fd.write(chunk)
+    # saving each messages to firebase
+    body = json.loads(body)
+    if 'events' not in body:
+        return '', 400
 
-    image_url = f'https://api-data.line.me/v2/bot/message/{body.events[0].message.id}/content'
-    
-    # handle webhook body
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        print("Invalid signature. Please check your channel access token/channel secret.")
-        abort(400)
+    for e in body['events']:
+        try:
+            msgType = e['message']['type']
+            msgID = e['message']['id']
+        except:
+            pass
+
+        if msgType == 'text':
+            firebase.save({
+                'type': msgType,
+                'content': e['message']['text']
+            })
+        elif msgType == 'image':
+            image_url = f'https://api-data.line.me/v2/bot/message/{msgID}/content'
+            firebase.save({
+                'type': msgType,
+                'content': image_url
+            })
 
     return 'OK'
-
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -56,6 +68,53 @@ def handle_message(event):
         event.reply_token,
         TextSendMessage(text=event.message.text))
 
+
 if __name__ == "__main__":
     app.run()
 
+
+'''
+webhook example:
+    純文字 => {
+        "events": [
+            {
+                "type": "message",
+                "replyToken": "11d94dc6da0547eaba7f1f8fef8ed176",
+                "source": {
+                    "userId": "U8cff07d183c7a9ebf3d96b1bd4f005cc",
+                    "type": "user"
+                },
+                "timestamp": 1618912749248,
+                "mode": "active",
+                "message": {
+                    "type": "text",
+                    "id": "13918940547944",
+                    "text": "欸"
+                }
+            }
+        ],
+        "destination": "U5220eac23dd0092d9d3831896aeabc86"
+    }
+    圖片檔 => {
+        "events": [
+            {
+                "type": "message",
+                "replyToken": "1f82c53580414382b6b2d5a1e2896fdc",
+                "source": {
+                    "userId": "U8cff07d183c7a9ebf3d96b1bd4f005cc",
+                    "type": "user"
+                },
+                "timestamp": 1618912745752,
+                "mode": "active",
+                "message": {
+                    "type": "image",
+                    "id": "13918940231982",
+                    "contentProvider": {
+                        "type": "line"
+                    }
+                }
+            }
+        ],
+        "destination": "U5220eac23dd0092d9d3831896aeabc86"
+    }
+'''
