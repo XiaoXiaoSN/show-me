@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import firebase from "firebase/app";
 import "firebase/database";
-import {
-  FirebaseDatabaseProvider,
-  FirebaseDatabaseNode,
-  FirebaseDatabaseMutation,
-} from "@react-firebase/database";
-import Bullet from './BulletScreen';
-import firebaseDB from "./firebaseConfig";
+
+import Bullet from './bullet/BulletScreen';
+import { saveMessage, loadMessages } from './firestore'
+
 import logo from './logo.svg';
 import './App.css';
 
-const text = [
+const bullets = [
   'I am the first',
   'I am the second ha',
   'I am the third haha',
@@ -20,42 +16,39 @@ const text = [
 ]
 
 function App() {
-  const [data] = useState(text)
+  const [data] = useState(bullets)
 
-  const renderItem = (item) => {
-    return <div className="item"> {item} </div>
+  const renderItem = (item: string) => {
+    return <div className="item"> { item } </div>
   }
+
+  const saveTESTING = () => { 
+    console.log('Ｉ ＡＭ SAVE')
+    saveMessage('text', 'From Code')
+   }
 
   ////////////////////////////
-  const [blogs, setBlogs] = useState([])
+  // const [blogs, setBlogs] = useState([])
   useEffect(() => {
-    fetchBlogs();
+    console.log('Ｉ ＡＭ ＨＥＲＥ')
+    loadMessages()
   }, [])
 
-  const fetchBlogs = async () => {
-    const response = firebaseDB.collection('/blogs');
-    const data = await response.get();
-    data.docs.forEach(item => {
-      console.log('item:', item.data())
-      setBlogs([...blogs, item.data()])
-    })
-  }
+  // const fetchBlogs = async () => {
+  //   const response = firebaseDB.collection('messages');
+  //   const data = await response.get();
+  //   data.docs.forEach((item: any) => {
+  //     console.log('item:', item.data())
+  //     // setBlogs([...blogs, item.data()])
+  //   })
+  // }
   ////////////////////////////
 
 
   return (
     <div className="App">
 
-      {
-        blogs && blogs.map(blog => {
-          return (
-            <div className="blog-container">
-              <h4>{blog.title}</h4>
-              <p>{blog.body}</p>
-            </div>
-          )
-        })
-      }
+      <button onClick={saveTESTING} > CLICK ME !!!!!!!!!!!!!!!!!!! </button>
 
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
