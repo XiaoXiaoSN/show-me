@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from firebase import Firebase
 from flask import Flask, request, abort
 
@@ -16,8 +17,6 @@ from linebot.models import (
 app = Flask(__name__)
 firebase = Firebase()
 
-# export CHANNEL_ACCESS_TOKEN=6ZMTfHC3qnr+VPbuosgAoN2yPS1Q5bcX7AaVT7Jc1nmVzhdsQ7ezNyLMttvBaWxEgH6FBmrq2GBO+IjjbITCSLwooLkfnWKVZwfKj87d1WVAfjq/eoVkL+mpoiWd/XwgxiS0wG0J4Aln36lnAv4ylwdB04t89/1O/w1cDnyilFU=
-# export CHANNEL_SECRET=bc285cd1a9bb77ae5c3b9a7fdadfb4bc
 CHANNEL_ACCESS_TOKEN =  os.environ['CHANNEL_ACCESS_TOKEN']
 CHANNEL_SECRET = os.environ['CHANNEL_SECRET']
 
@@ -51,13 +50,15 @@ def callback():
         if msgType == 'text':
             firebase.save({
                 'type': msgType,
-                'content': e['message']['text']
+                'content': e['message']['text'],
+                'timestamp': time.time(),
             })
         elif msgType == 'image':
             image_url = f'https://api-data.line.me/v2/bot/message/{msgID}/content'
             firebase.save({
                 'type': msgType,
-                'content': image_url
+                'content': image_url,
+                'timestamp': time.time(),
             })
 
     return 'OK'

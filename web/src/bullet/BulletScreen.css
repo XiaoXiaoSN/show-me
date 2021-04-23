@@ -7,3 +7,10 @@
     padding: 0px 12px;
     border-radius: 12px;
 }
+
+.bullet-item {
+    /* top: {rowIndex * rowHeight}px; */
+    /* left: {scrollWidth}px */
+    position: fixed;
+    white-space: nowrap;
+}

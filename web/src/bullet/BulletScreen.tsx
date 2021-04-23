@@ -1,4 +1,4 @@
-// Copy from https://github.com/tong233/react-bullet-screen
+// Change from https://github.com/tong233/react-bullet-screen
 
 import React, { PureComponent } from 'react'
 import ReactDOM from 'react-dom'
@@ -7,7 +7,7 @@ import './BulletScreen.css';
 interface BulletProps {
   data: any[]
   renderItem: (item: any) => React.ReactElement
-  speed: number // px/s
+  speed: number // pixel per second
   row: number
   rowHeight: number
   spacing: number
@@ -18,7 +18,7 @@ interface BulletProps {
  */
 class Bullet extends PureComponent<BulletProps, {}> {
   static defaultProps = {
-    speed: 50,
+    speed: 80,
     row: 3,
     rowHeight: 40,
     spacing: 120,
@@ -47,21 +47,19 @@ class Bullet extends PureComponent<BulletProps, {}> {
     clearTimeout(this.timer)
   }
 
-  init() {
+  componentDidUpdate() {
     const { data, row } = this.props
 
+    const bullet = data.pop()
+
+    this.launchBarge(bullet, this.launchedCount % row)
+    this.launchedCount++
+  }
+
+  init() {
     // 设定时器避免初始化拿不到宽度
     setTimeout(() => {
       this.scrollWidth = this.bulletRef ? this.bulletRef.offsetWidth : document.body.clientWidth
-
-      while (this.launchedCount < row) {
-        const bullet = data[this.launchedCount]
-        const count = this.launchedCount
-        setTimeout(() => {
-          this.launchBarge(bullet, count)
-        }, count * 1500)
-        this.launchedCount++
-      }
     }, 20)
   }
 
@@ -75,7 +73,11 @@ class Bullet extends PureComponent<BulletProps, {}> {
     if (this.bulletRef) {
       this.bulletRef.appendChild(bulletEle)
     }
-    const { data, speed, spacing } = this.props
+    const { speed, spacing } = this.props
+
+    // 加入隨機的抖動速率調整
+    const speedDither: number = 0.8
+    const realSpeed = speed + ((Math.random()-0.5) * speedDither * speed)
 
     let bulletWidth = bulletEle.offsetWidth
     // 拿不到宽度按一屏处理
@@ -85,19 +87,19 @@ class Bullet extends PureComponent<BulletProps, {}> {
     // 全程滚动距离
     const distance = this.scrollWidth + bulletWidth
 
-    const duration = distance / speed
-    // 弹幕滚动至spacing所需时间
-    const time = (bulletWidth + spacing) / speed
+    const duration = distance / realSpeed
+    // 弹幕滚动至 spacing 所需时间
+    const time = (bulletWidth + spacing) / realSpeed
 
     bulletEle.style.transform = `translateX(${-distance}px)`
     bulletEle.style.transition = `transform ${duration}s linear`
 
-    // 当弹幕拉开距离spacing时发射下一个弹幕
-    this.timer = window.setTimeout(() => {
-      const nextBullet = data[this.launchedCount % data.length]
-      this.launchBarge(nextBullet, rowIndex)
-      this.launchedCount++
-    }, time * 1000)
+    // // 当弹幕拉开距离 spacing 时发射下一个弹幕
+    // this.timer = window.setTimeout(() => {
+    //   const nextBullet = data[this.launchedCount % data.length]
+    //   this.launchBarge(nextBullet, rowIndex)
+    //   this.launchedCount++
+    // }, time * 1000)
   }
 
   /**
@@ -112,8 +114,6 @@ class Bullet extends PureComponent<BulletProps, {}> {
     div.classList.add('bullet-item')
     div.style.top = `${rowIndex * rowHeight}px`
     div.style.left = `${this.scrollWidth}px`
-    div.style.position = 'fixed'
-    div.style.whiteSpace = 'nowrap'
 
     const handleTransitionEnd = () => {
       // 弹幕运动完成后移除监听，清除弹幕
